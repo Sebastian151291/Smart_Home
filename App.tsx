@@ -1,118 +1,81 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useState, useEffect } from 'react';
+import { Button, View, Text, PermissionsAndroid, Alert } from 'react-native';
+import Voice from '@react-native-community/voice';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+const App = () => {
+  const [lightStatus, setLightStatus] = useState(false);
+  const [voiceText, setVoiceText] = useState('');
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
+  useEffect(() => {
+    const requestMicrophonePermission = async () => {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
           {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+            title: 'Permisiuni microfon',
+            message: 'Pentru a trimite comenzi , aceasta aplicatie are nevoie de accesul la microfon',
+            buttonNeutral: 'Intreaba-ma mai tarziu',
+            buttonNegative: 'Anulare',
+            buttonPositive: 'Da',
+          }
+        );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          Alert.alert('Nu ai permis accesul la microfon');
+        }
+      } catch (err) {
+        console.warn(err);
+      }
+    };
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+    requestMicrophonePermission();
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+    Voice.onSpeechResults = onSpeechResults;
+    return () => {
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
+  }, []);
+
+  const onSpeechResults = (e) => {
+    setVoiceText(e.value[0]);
+    if (e.value[0].toLowerCase() === 'aprinde becul') {
+      toggleLight('on');
+    } else if (e.value[0].toLowerCase() === 'stinge becul') {
+      toggleLight('off');
+    }
+  };
+
+  const startListening = () => {
+    Voice.start('ro-RO').catch(error => {
+      console.error('Voice start error: ', error);
+      Alert.alert('Failed to start listening', error.message);
+    });
+  };
+
+  const toggleLight = async (command) => {
+    try {
+      const response = await fetch(`http://192.168.0.143:8000/lights/${command}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setLightStatus(command === 'on');
+        Alert.alert('Success', `Light turned ${command}`);
+      } else {
+        console.error('Failed to toggle light',data);
+        Alert.alert('Error', 'Failed to toggle light: ' + (data.detail || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Network error', error);
+      Alert.alert('Network Error', error.message);
+    }
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Button title="Start Listening" onPress={startListening} />
+      <Text>{voiceText}</Text>
+      <Button title={`Turn light ${lightStatus ? 'Off' : 'On'}`} onPress={() => toggleLight(lightStatus ? 'off' : 'on')} />
+    </View>
   );
-}
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+};
 
 export default App;
