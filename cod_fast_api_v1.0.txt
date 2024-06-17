@@ -27,6 +27,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+#endpoint for the light bulbs state on/off
+
 @app.get("/lights/{state}")
 async def toggle_light(state: str):
     # Replace with the IP address of your bulb
@@ -47,4 +49,4 @@ async def toggle_light(state: str):
         logger.error(f"Error toggling light: {e}")
         raise HTTPException(status_code=500, detail="Failed to toggle light")
 
-# To run the FastAPI app, use: uvicorn filename:app --host 0.0.0.0 --port 8000 --reload
+

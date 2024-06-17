@@ -1,4 +1,4 @@
-// App.js
+
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -9,7 +9,7 @@ import '@react-native-firebase/auth';
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBRGgnXwoop3Pi5QrdxxiIFcdyhwIkCIls",           // Use the Web API Key from your screenshot
+  apiKey: "AIzaSyBRGgnXwoop3Pi5QrdxxiIFcdyhwIkCIls",           
   authDomain: "[proiect-91191].firebaseapp.com",
   projectId: "proiect-91191",
   storageBucket: "[proiect-91191].appspot.com",
